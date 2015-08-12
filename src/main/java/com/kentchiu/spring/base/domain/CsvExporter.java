@@ -8,13 +8,17 @@ import com.google.common.collect.Maps;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 
+import javax.persistence.JoinColumn;
+import java.beans.PropertyDescriptor;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -24,13 +28,14 @@ import java.util.stream.StreamSupport;
 public class CsvExporter {
 
 
+
     public static <T> List<T> csvToDomains(Class<T> clazz, Path path) throws IOException {
         Reader in = new FileReader(path.toFile());
         Iterable<CSVRecord> records = CSVFormat.EXCEL.withHeader().parse(in);
 
         return StreamSupport.stream(records.spliterator(), false).map(record -> {
             Map<String, String> map = record.toMap();
-            Map<String, String> map2 = Maps.newHashMap();
+            Map<String, Object> map2 = Maps.newHashMap();
 
             map.forEach((k, v) -> {
                 String k2 = CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, k);
@@ -39,13 +44,42 @@ public class CsvExporter {
                 }
             });
 
+            PropertyDescriptor[] pds = BeanUtils.getPropertyDescriptors(clazz);
+
+            List<PropertyDescriptor> pdList = Arrays.stream(pds).filter(pd -> IdentifiableObject.class.isAssignableFrom(pd.getPropertyType())).collect(Collectors.toList());
+            for (PropertyDescriptor pd : pdList) {
+                IdentifiableObject identityObject = createIdentityObject(map, pd);
+                if (identityObject != null) {
+                    map2.put(pd.getName(), identityObject);
+                }
+            }
+
             ObjectMapper om = new ObjectMapper();
             om.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
             om.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-            return om.convertValue(map2, clazz);
+            T t = om.convertValue(map2, clazz);
+            return t;
         }).collect(Collectors.toList());
     }
 
+    private static IdentifiableObject createIdentityObject(Map<String, String> map, PropertyDescriptor pd) {
+        Class<?> type = pd.getPropertyType();
+        try {
+            Object o = type.newInstance();
+            IdentifiableObject io = (IdentifiableObject) o;
+            JoinColumn annotation = pd.getReadMethod().getAnnotation(JoinColumn.class);
+            String name = annotation.name();
+            String uuid = map.get(name);
+            io.setUuid(uuid);
+            return io;
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+            return null;
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
     public static Path csvToSql(String tableName, Path path) throws IOException {
         Reader in = new FileReader(path.toFile());

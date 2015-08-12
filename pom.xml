@@ -5,7 +5,7 @@
 
     <groupId>com.kentchiu</groupId>
     <artifactId>spring-test-base</artifactId>
-    <version>0.0.8-SNAPSHOT</version>
+    <version>0.0.8</version>
     <packaging>jar</packaging>
 
 
@@ -77,6 +77,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.kentchiu</groupId>
+            <artifactId>spring-base</artifactId>
+            <version>0.1.4</version>
         </dependency>
     </dependencies>
 
