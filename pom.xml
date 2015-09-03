@@ -5,7 +5,7 @@
 
     <groupId>com.kentchiu</groupId>
     <artifactId>spring-test-base</artifactId>
-    <version>0.0.9-SNAPSHOT</version>
+    <version>0.0.9</version>
     <packaging>jar</packaging>
 
 

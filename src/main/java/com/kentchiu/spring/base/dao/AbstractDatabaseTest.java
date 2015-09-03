@@ -50,14 +50,14 @@ public abstract class AbstractDatabaseTest {
         Path path;
         try {
             if (url == null) {
-                throw new IllegalStateException("Not exist : " + this.getClass().getSimpleName());
+                throw new IllegalStateException("CSV files not exist : " + this.getClass().getSimpleName());
             }
             path = Paths.get(url.toURI());
             if (!Files.exists(path)) {
-                throw new IllegalStateException("Not exist : " + path);
+                throw new IllegalStateException("CSV files not exist : " + path);
             }
             if (!Files.isDirectory(path)) {
-                throw new IllegalStateException("Not a folder : " + path);
+                throw new IllegalStateException("CSV files not exist : " + path);
             }
         } catch (URISyntaxException e) {
             throw new IllegalStateException("can't found csv folder at : " + url);
