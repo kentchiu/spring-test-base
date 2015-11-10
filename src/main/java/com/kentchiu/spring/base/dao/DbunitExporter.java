@@ -5,6 +5,8 @@ import org.dbunit.DatabaseUnitException;
 import org.dbunit.database.DatabaseConnection;
 import org.dbunit.database.IDatabaseConnection;
 import org.dbunit.dataset.DataSetException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,8 +18,7 @@ import java.util.Map;
 public class DbunitExporter {
 
     private Connection connection;
-
-
+    private Logger logger = LoggerFactory.getLogger(DbunitExporter.class);
     public DbunitExporter(DatabaseType db, String url, String username, String password) {
         try {
             Class.forName(db.getDriver());
@@ -37,6 +38,10 @@ public class DbunitExporter {
         return result;
     }
 
+    public Connection getConnection() {
+        return connection;
+    }
+
     private IDatabaseConnection getDbunitConnection() throws DatabaseUnitException {
         return new DatabaseConnection(connection);
     }
@@ -52,27 +57,32 @@ public class DbunitExporter {
     public Path exportSchema(String[] tableNames, Map<String, String> columnNameMapping) throws SQLException, DataSetException {
         StringBuilder sb = new StringBuilder();
         for (String tableName : tableNames) {
+            logger.info("export  table [{}]", tableName);
             String sql = "select  * from " + tableName;
-            Statement stmt = connection.createStatement();
-            ResultSet rs = stmt.executeQuery(sql);
-            ResultSetMetaData metaData = rs.getMetaData();
-            sb.append("CREATE TABLE IF NOT EXISTS " + tableName).append("\n");
-            sb.append("(").append("\n");
-            for (int i = 1; i <= metaData.getColumnCount(); i++) {
-                String key = tableName + "." + metaData.getColumnName(i);
-                if (Iterables.contains(columnNameMapping.keySet(), key)) {
-                    sb.append("\t").append(columnNameMapping.get(key));
-                } else {
-                    String type = getType(metaData, i);
-                    sb.append("\t").append(metaData.getColumnName(i)).append(" ").append(type);
+            try {
+                Statement stmt = connection.createStatement();
+                ResultSet rs = stmt.executeQuery(sql);
+                ResultSetMetaData metaData = rs.getMetaData();
+                sb.append("CREATE TABLE IF NOT EXISTS " + tableName).append("\n");
+                sb.append("(").append("\n");
+                for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                    String key = tableName + "." + metaData.getColumnName(i);
+                    if (Iterables.contains(columnNameMapping.keySet(), key)) {
+                        sb.append("\t").append(columnNameMapping.get(key));
+                    } else {
+                        String type = getType(metaData, i);
+                        sb.append("\t").append(metaData.getColumnName(i)).append(" ").append(type);
+                    }
+                    if (i != metaData.getColumnCount()) {
+                        sb.append(",").append("\n");
+                    } else {
+                        sb.append("\n");
+                    }
                 }
-                if (i != metaData.getColumnCount()) {
-                    sb.append(",").append("\n");
-                } else {
-                    sb.append("\n");
-                }
+                sb.append(");").append("\n").append("\n");
+            } catch (SQLException e) {
+                logger.warn("export table [" + tableName + "] fail", e);
             }
-            sb.append(");").append("\n").append("\n");
         }
 
         try {
