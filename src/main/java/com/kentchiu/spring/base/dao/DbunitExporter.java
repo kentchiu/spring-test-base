@@ -19,6 +19,7 @@ public class DbunitExporter {
 
     private Connection connection;
     private Logger logger = LoggerFactory.getLogger(DbunitExporter.class);
+
     public DbunitExporter(DatabaseType db, String url, String username, String password) {
         try {
             Class.forName(db.getDriver());
@@ -126,6 +127,9 @@ public class DbunitExporter {
                 break;
             case Types.BIT:
                 type = "boolean";
+                break;
+            case Types.CLOB:
+                type = "clob";
                 break;
             default:
                 System.err.println("UNKNOWN COLUMN TYPE:" + columnType);

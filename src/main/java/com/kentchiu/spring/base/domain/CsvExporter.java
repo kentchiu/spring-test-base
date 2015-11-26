@@ -28,7 +28,6 @@ import java.util.stream.StreamSupport;
 public class CsvExporter {
 
 
-
     public static <T> List<T> csvToDomains(Class<T> clazz, Path path) throws IOException {
         Reader in = new FileReader(path.toFile());
         Iterable<CSVRecord> records = CSVFormat.EXCEL.withHeader().parse(in);

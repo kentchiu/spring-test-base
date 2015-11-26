@@ -1,19 +1,18 @@
 package com.kentchiu.spring.base.web;
 
 import com.google.common.base.Preconditions;
-import com.jayway.jsonassert.JsonAssert;
-import com.jayway.jsonassert.JsonAsserter;
 import com.jayway.jsonpath.JsonPath;
 import com.kentchiu.spring.base.domain.Validators;
 import net.minidev.json.JSONArray;
-import net.minidev.json.JSONObject;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultMatcher;
 
 import java.io.UnsupportedEncodingException;
+import java.util.LinkedHashMap;
 
 import static com.jayway.jsonpath.Criteria.where;
 import static com.jayway.jsonpath.Filter.filter;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public class FieldErrorResultMatchers {
@@ -59,8 +58,8 @@ public class FieldErrorResultMatchers {
             fail("more then one field called [" + name + "] present");
         }
         Preconditions.checkState(fields.size() == 1, "fieldErrors should have one and only one element");
-        JSONObject o = (JSONObject) fields.get(0);
-        JsonAsserter asserter = JsonAssert.with(o.toJSONString());
-        asserter.assertEquals("$.field", name).assertEquals("$.code", code);
+        LinkedHashMap o = (LinkedHashMap) fields.get(0);
+        assertEquals(o.get("field"), name);
+        assertEquals(o.get("code"), code);
     }
 }
