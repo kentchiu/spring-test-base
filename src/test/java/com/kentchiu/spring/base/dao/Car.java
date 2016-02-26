@@ -13,6 +13,16 @@ public class Car {
     private String name;
     private Integer doors;
     private BigDecimal price;
+    private Integer quantity;
+
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
 
     public BigDecimal getPrice() {
         return price;
@@ -53,5 +63,8 @@ public class Car {
     public void setDoors(Integer doors) {
         this.doors = doors;
     }
+
+
+
 
 }

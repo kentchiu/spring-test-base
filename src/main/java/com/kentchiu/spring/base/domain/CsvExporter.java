@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
@@ -27,8 +28,19 @@ import java.util.stream.StreamSupport;
 
 public class CsvExporter {
 
-
     public static <T> List<T> csvToDomains(Class<T> clazz, Path path) throws IOException {
+        return csvToDomains(clazz, path, ImmutableMap.of());
+    }
+
+    /**
+     * @param clazz
+     * @param path
+     * @param substitutes 重新 mapping 屬性，常用於縮寫字還原成原始字，ex: 在csv的title可能是 qty，但在domain object的屬性是quantity, qty -> quantity
+     * @param <T>
+     * @return
+     * @throws IOException
+     */
+    public static <T> List<T> csvToDomains(Class<T> clazz, Path path, Map<String, String> substitutes) throws IOException {
         Reader in = new FileReader(path.toFile());
         Iterable<CSVRecord> records = CSVFormat.EXCEL.withHeader().parse(in);
 
@@ -37,7 +49,12 @@ public class CsvExporter {
             Map<String, Object> map2 = Maps.newHashMap();
 
             map.forEach((k, v) -> {
-                String k2 = CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, k);
+                String k2;
+                if (substitutes.containsKey(k)) {
+                    k2 = substitutes.get(k);
+                } else {
+                    k2 = CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, k);
+                }
                 if (!StringUtils.equalsIgnoreCase("null", v)) {
                     map2.put(k2, v);
                 }
@@ -99,3 +116,5 @@ public class CsvExporter {
     }
 
 }
+
+
