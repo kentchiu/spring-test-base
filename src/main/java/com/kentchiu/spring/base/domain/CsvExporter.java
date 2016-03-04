@@ -84,6 +84,9 @@ public class CsvExporter {
             Object o = type.newInstance();
             IdentifiableObject io = (IdentifiableObject) o;
             JoinColumn annotation = pd.getReadMethod().getAnnotation(JoinColumn.class);
+            if (annotation == null) {
+                return null;
+            }
             String name = annotation.name();
             String uuid = map.get(name);
             io.setUuid(uuid);
