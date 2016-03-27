@@ -36,7 +36,10 @@ public class ApiDocSnippet extends TemplatedSnippet {
         MethodParameter[] methodParameters = handler.getMethodParameters();
         for (MethodParameter p : methodParameters) {
             Class<?> type = p.getParameterType();
-            if (StringUtils.endsWith(type.getPackage().toString(), ".query") || StringUtils.endsWith(type.getPackage().toString(), ".dto")) {
+            if (type.isPrimitive() || type.isArray()) {
+                return Optional.empty();
+            }
+            if ( StringUtils.endsWith(type.getPackage().toString(), ".query") || StringUtils.endsWith(type.getPackage().toString(), ".dto")) {
                 return Optional.of(type.getSimpleName());
             }
         }
