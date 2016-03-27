@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class ApiDocInfoCollector implements Snippet {
+public class ResourceDocSnippet implements Snippet {
 
     private Operation operation;
     private List<Section> sections = new ArrayList<>();
@@ -43,7 +43,7 @@ public class ApiDocInfoCollector implements Snippet {
                 .getAttributes().get(RestDocumentationContext.class.getName());
         WriterResolver writerResolver = (WriterResolver) operation.getAttributes().get(
                 WriterResolver.class.getName());
-        String snippetName = "RestDoc";
+        String snippetName = "ResourceDoc";
         try (Writer writer = writerResolver.resolve("{ClassName}", snippetName, context)) {
             Map<String, Object> model = createModel(operation);
             TemplateEngine templateEngine = (TemplateEngine) operation.getAttributes().get(TemplateEngine.class.getName());
