@@ -10,10 +10,7 @@ import org.springframework.restdocs.templates.TemplateEngine;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ResourceDocSnippet implements Snippet {
@@ -72,7 +69,23 @@ public class ResourceDocSnippet implements Snippet {
         }
 
         public List<Api> getApi() {
-            return api;
+            Map<String, Integer> map = new HashedMap();
+            map.put("GET", 100);
+            map.put("POST", 90);
+            map.put("PATCH", 80);
+            map.put("PUT", 70);
+            map.put("DELETE", 60);
+
+
+            Comparator<Api> c1 = (o1, o2) -> {
+                Integer grade1 = map.get(o1.getHttpMethod());
+                Integer grade2 = map.get(o2.getHttpMethod());
+                return grade2 - grade1;
+            };
+
+
+            List<Api> result = api.stream().sorted(c1.thenComparing(Api::getInclude)).collect(Collectors.toList());
+            return result;
         }
 
         public void setApi(List<Api> api) {
@@ -117,5 +130,7 @@ public class ResourceDocSnippet implements Snippet {
         public void setInclude(String include) {
             this.include = include;
         }
+
+
     }
 }
