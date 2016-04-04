@@ -12,6 +12,6 @@ public @interface ApiDoc {
 
     int order() default Integer.MAX_VALUE;
 
-    String description() default "";
+    String title();
 
 }

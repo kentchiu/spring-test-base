@@ -4,6 +4,8 @@ import com.google.common.base.Preconditions;
 import com.kentchiu.spring.base.domain.ApiDoc;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
 import org.springframework.restdocs.RestDocumentationContext;
 import org.springframework.restdocs.operation.Operation;
@@ -18,10 +20,12 @@ import java.util.stream.Collectors;
 
 public class ResourceDocSnippet implements Snippet {
 
+    public static final String DEFAULT_MESSAGE = "FIXME: NOT FOUND";
     private Operation operation;
     private List<Section> sections = new ArrayList<>();
-    private String attributeInclude = "FIXME: NOT FOUND";
+    private String attributeInclude = DEFAULT_MESSAGE;
     private RestDocumentationContextHelper helper;
+    private Logger logger = LoggerFactory.getLogger(ResourceDocSnippet.class);
 
     @Override
     public void document(Operation operation) throws IOException {
@@ -46,11 +50,8 @@ public class ResourceDocSnippet implements Snippet {
             if (HttpMethod.GET == operation.getRequest().getMethod()) {
                 String url = operation.getRequest().getUri().toString();
                 if (isMatches(url)) {
-//                    MvcResult mvcResult = (MvcResult) operation.getAttributes().get("org.springframework.test.web.servlet.MockMvc.MVC_RESULT_ATTRIBUTE");
-//                    HandlerMethod handler = (HandlerMethod) mvcResult.getHandler();
                     String returnType = helper.getTargetMethod().getReturnType().getSimpleName();
                     Preconditions.checkState(StringUtils.equals(returnType, helper.getTargetMethod().getReturnType().getSimpleName()));
-
                     attributeInclude = "include::{snippets}/" + context.getTestClass().getSimpleName() + "/" + context.getTestMethodName() + "/" + returnType + ".adoc[]";
                 }
             }
@@ -94,11 +95,18 @@ public class ResourceDocSnippet implements Snippet {
 
         ApiDoc annotation = context.getTestClass().getAnnotation(ApiDoc.class);
         if (annotation != null) {
-            result.put("resourceChineseName", annotation.description());
+            result.put("resourceChineseName", annotation.title());
+        } else {
+            result.put("resourceChineseName", helper.getClass().getSimpleName());
+            logger.warn("Missing @ApiDoc in test class");
+        }
+        if (StringUtils.equals(DEFAULT_MESSAGE, attributeInclude)) {
+            logger.warn("Can't found attributeInclude");
         }
         result.put("attributeInclude", attributeInclude);
         List<Section> sortedSessions = sections.stream().sorted((o1, o2) -> o1.uri.length() > o2.getUri().length() ? 1 : -1).collect(Collectors.toList());
-        result.put("section", sortedSessions);
+        List<Section> sections = sortedSessions.stream().filter(s -> !s.api.isEmpty()).collect(Collectors.toList());
+        result.put("section", sections);
         return result;
     }
 

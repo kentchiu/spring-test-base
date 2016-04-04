@@ -3,7 +3,8 @@ package com.kentchiu.spring.base.web;
 import com.kentchiu.spring.base.domain.ApiDoc;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.restdocs.RestDocumentationContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.restdocs.operation.Operation;
 import org.springframework.restdocs.snippet.TemplatedSnippet;
 
@@ -14,6 +15,7 @@ import java.util.Optional;
 public class ApiDocSnippet extends TemplatedSnippet {
 
     private RestDocumentationContextHelper helper;
+    private Logger logger = LoggerFactory.getLogger(ApiDocSnippet.class);
 
     public ApiDocSnippet() {
         super("ApiDoc", null);
@@ -21,15 +23,26 @@ public class ApiDocSnippet extends TemplatedSnippet {
 
     @Override
     protected Map<String, Object> createModel(Operation operation) {
-        RestDocumentationContext context = (RestDocumentationContext) operation.getAttributes().get(RestDocumentationContext.class.getName());
         helper = new RestDocumentationContextHelper(operation);
         Map<String, Object> results = new HashedMap();
         findArgument(operation).ifPresent(arg -> results.put("argument", arg));
 
-        ApiDoc apiDoc = helper.getClassAnnotation();
-        results.put("httpMethod", operation.getRequest().getMethod());
+        ApiDoc apiDoc = helper.getMethodAnnotation();
+        String title = "";
+        if (apiDoc != null) {
+            title = apiDoc.title();
+        }
+        if (StringUtils.isBlank(title)) {
+            title = operation.getRequest().getMethod().name();
+            logger.warn("");
+        }
+        results.put("title", title);
         results.put("className", helper.getTestClass().getSimpleName());
-        results.put("methodName", helper.getTargetMethod().getName());
+        try {
+            results.put("methodName", helper.getTestMethod().getName());
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
         return results;
     }
 
@@ -55,7 +68,7 @@ public class ApiDocSnippet extends TemplatedSnippet {
             if (type.isPrimitive() || type.isArray()) {
                 return Optional.empty();
             }
-            if ( StringUtils.endsWith(type.getPackage().toString(), ".query") || StringUtils.endsWith(type.getPackage().toString(), ".dto")) {
+            if (StringUtils.endsWith(type.getPackage().toString(), ".query") || StringUtils.endsWith(type.getPackage().toString(), ".dto")) {
                 return Optional.of(type.getSimpleName());
             }
         }

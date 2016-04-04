@@ -11,26 +11,26 @@ import java.lang.reflect.Method;
 public class RestDocumentationContextHelper {
 
     private Operation operation;
+    private RestDocumentationContext context;
 
     public RestDocumentationContextHelper(Operation operation) {
         this.operation = operation;
+        this.context = (RestDocumentationContext) operation.getAttributes().get(RestDocumentationContext.class.getName());
     }
 
-    public RestDocumentationContext getContext() {
-        return (RestDocumentationContext) operation.getAttributes().get(RestDocumentationContext.class.getName());
-
-    }
 
     public Class getTestClass() {
-        return getContext().getTestClass();
+        return context.getTestClass();
     }
 
     public Class getTargetClass() {
-        return null;
+        MvcResult mvcResult = (MvcResult) operation.getAttributes().get("org.springframework.test.web.servlet.MockMvc.MVC_RESULT_ATTRIBUTE");
+        HandlerMethod handler = (HandlerMethod) mvcResult.getHandler();
+        return handler.getBeanType();
     }
 
     public Method getTestMethod() throws NoSuchMethodException {
-        return getTestClass().getDeclaredMethod(getContext().getTestMethodName());
+        return getTestClass().getDeclaredMethod(context.getTestMethodName());
     }
 
     public Method getTargetMethod() {
@@ -40,7 +40,7 @@ public class RestDocumentationContextHelper {
     }
 
     public ApiDoc getClassAnnotation() {
-        return null;
+        return (ApiDoc) getTestClass().getAnnotation(ApiDoc.class);
     }
 
     public ApiDoc getMethodAnnotation() {
