@@ -15,8 +15,6 @@ import org.springframework.restdocs.RestDocumentationContext;
 import org.springframework.restdocs.operation.Operation;
 import org.springframework.restdocs.snippet.Snippet;
 import org.springframework.restdocs.snippet.WriterResolver;
-import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.web.method.HandlerMethod;
 
 import javax.persistence.Column;
 import javax.persistence.JoinColumn;
@@ -26,7 +24,6 @@ import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Date;
 import java.util.List;
@@ -36,6 +33,7 @@ import java.util.stream.Collectors;
 public class AttributeSnippet implements Snippet {
 
     private Logger logger = LoggerFactory.getLogger(AttributeSnippet.class);
+    private RestDocumentationContextHelper helper;
 
     public List<String> attributeTable(Class<?> clazz) {
         if (ClassUtils.isPrimitiveOrWrapper(clazz) || Date.class.isAssignableFrom(clazz) || String.class.isAssignableFrom(clazz)) {
@@ -209,11 +207,15 @@ public class AttributeSnippet implements Snippet {
 
     @Override
     public void document(Operation operation) throws IOException {
-        MvcResult mvcResult = (MvcResult) operation.getAttributes().get("org.springframework.test.web.servlet.MockMvc.MVC_RESULT_ATTRIBUTE");
-        HandlerMethod hm = (HandlerMethod) mvcResult.getHandler();
-        Method method = hm.getMethod();
-        Parameter[] parameters = method.getParameters();
-        write(operation, method.getReturnType());
+        helper = new RestDocumentationContextHelper(operation);
+//        MvcResult mvcResult = (MvcResult) operation.getAttributes().get("org.springframework.test.web.servlet.MockMvc.MVC_RESULT_ATTRIBUTE");
+//        HandlerMethod hm = (HandlerMethod) mvcResult.getHandler();
+//        Method method = hm.getMethod();
+//        Preconditions.checkState(StringUtils.equals(method.getName(),  helper.getTargetMethod().getName()));
+        //Parameter[] parameters = method.getParameters();
+        Parameter[] parameters = helper.getTargetMethod().getParameters();
+        write(operation, helper.getTargetMethod().getReturnType());
+
         for (Parameter parameter : parameters) {
             write(operation, parameter.getType());
         }

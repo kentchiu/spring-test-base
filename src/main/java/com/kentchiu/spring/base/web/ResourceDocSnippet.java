@@ -1,7 +1,10 @@
 package com.kentchiu.spring.base.web;
 
+import com.google.common.base.Preconditions;
+import com.kentchiu.spring.base.domain.ApiDoc;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.http.HttpMethod;
 import org.springframework.restdocs.RestDocumentationContext;
 import org.springframework.restdocs.operation.Operation;
 import org.springframework.restdocs.snippet.Snippet;
@@ -17,9 +20,12 @@ public class ResourceDocSnippet implements Snippet {
 
     private Operation operation;
     private List<Section> sections = new ArrayList<>();
+    private String attributeInclude = "FIXME: NOT FOUND";
+    private RestDocumentationContextHelper helper;
 
     @Override
     public void document(Operation operation) throws IOException {
+        helper = new RestDocumentationContextHelper(operation);
         RestDocumentationContext context = (RestDocumentationContext) operation.getAttributes().get(RestDocumentationContext.class.getName());
         this.operation = operation;
         String uri = (String) operation.getAttributes().get("org.springframework.web.servlet.HandlerMapping.bestMatchingPattern");
@@ -29,10 +35,42 @@ public class ResourceDocSnippet implements Snippet {
             sections.add(s);
             return s;
         });
-        String include = "include::{snippets}/" + context.getTestClass().getSimpleName() + "/" + context.getTestMethodName() + "/ApiDoc.adoc[]";
-        Api api = new Api(operation.getRequest().getMethod().name(), include);
-        section.api.add(api);
 
+        ApiDoc apiDoc = helper.getMethodAnnotation();
+        if (apiDoc != null) {
+            String include = "include::{snippets}/" + context.getTestClass().getSimpleName() + "/" + context.getTestMethodName() + "/ApiDoc.adoc[]";
+            Api api = new Api(operation.getRequest().getMethod().name(), include);
+            setOrder(context, api);
+            section.api.add(api);
+
+            if (HttpMethod.GET == operation.getRequest().getMethod()) {
+                String url = operation.getRequest().getUri().toString();
+                if (isMatches(url)) {
+//                    MvcResult mvcResult = (MvcResult) operation.getAttributes().get("org.springframework.test.web.servlet.MockMvc.MVC_RESULT_ATTRIBUTE");
+//                    HandlerMethod handler = (HandlerMethod) mvcResult.getHandler();
+                    String returnType = helper.getTargetMethod().getReturnType().getSimpleName();
+                    Preconditions.checkState(StringUtils.equals(returnType, helper.getTargetMethod().getReturnType().getSimpleName()));
+
+                    attributeInclude = "include::{snippets}/" + context.getTestClass().getSimpleName() + "/" + context.getTestMethodName() + "/" + returnType + ".adoc[]";
+                }
+            }
+        }
+    }
+
+    boolean isMatches(String url) {
+        if (url.endsWith("/")) {
+            return url.matches(".*\\w{8}-\\w{4}-\\w{4}-\\w{4}-\\w{12}[\\?? /b]?.*");
+        } else {
+            String s = StringUtils.substringAfterLast(url, "/");
+            return s.matches(".*\\w{8}-\\w{4}-\\w{4}-\\w{4}-\\w{12}[\\?? /b]?.*");
+        }
+    }
+
+    private void setOrder(RestDocumentationContext context, Api api) {
+        ApiDoc annotation = helper.getMethodAnnotation();
+        if (annotation != null) {
+            api.setOrder(annotation.order());
+        }
     }
 
     public void writeAndFlush() throws IOException {
@@ -51,6 +89,14 @@ public class ResourceDocSnippet implements Snippet {
 
     private Map<String, Object> createModel(Operation operation) {
         Map<String, Object> result = new HashedMap();
+
+        RestDocumentationContext context = (RestDocumentationContext) operation.getAttributes().get(RestDocumentationContext.class.getName());
+
+        ApiDoc annotation = context.getTestClass().getAnnotation(ApiDoc.class);
+        if (annotation != null) {
+            result.put("resourceChineseName", annotation.description());
+        }
+        result.put("attributeInclude", attributeInclude);
         List<Section> sortedSessions = sections.stream().sorted((o1, o2) -> o1.uri.length() > o2.getUri().length() ? 1 : -1).collect(Collectors.toList());
         result.put("section", sortedSessions);
         return result;
@@ -83,8 +129,7 @@ public class ResourceDocSnippet implements Snippet {
                 return grade2 - grade1;
             };
 
-
-            List<Api> result = api.stream().sorted(c1.thenComparing(Api::getInclude)).collect(Collectors.toList());
+            List<Api> result = api.stream().sorted(c1.thenComparing(Api::getOrder)).collect(Collectors.toList());
             return result;
         }
 
@@ -109,10 +154,19 @@ public class ResourceDocSnippet implements Snippet {
     class Api {
         private String httpMethod;
         private String include;
+        private int order = Integer.MAX_VALUE;
 
         public Api(String httpMethod, String include) {
             this.httpMethod = httpMethod;
             this.include = include;
+        }
+
+        public int getOrder() {
+            return order;
+        }
+
+        public void setOrder(int order) {
+            this.order = order;
         }
 
         public String getHttpMethod() {
@@ -134,3 +188,4 @@ public class ResourceDocSnippet implements Snippet {
 
     }
 }
+
