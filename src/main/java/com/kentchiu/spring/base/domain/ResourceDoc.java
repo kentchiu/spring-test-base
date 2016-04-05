@@ -4,16 +4,14 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import static java.lang.annotation.ElementType.FIELD;
-import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.TYPE;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target({METHOD, FIELD})
-public @interface ApiDoc {
-
-    int order() default Integer.MAX_VALUE;
+@Target({TYPE})
+public @interface ResourceDoc {
 
     String title();
 
-}
+    String include() default "";
 
+}

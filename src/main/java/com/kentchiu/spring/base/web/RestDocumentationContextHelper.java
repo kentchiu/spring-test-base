@@ -1,6 +1,7 @@
 package com.kentchiu.spring.base.web;
 
 import com.kentchiu.spring.base.domain.ApiDoc;
+import com.kentchiu.spring.base.domain.ResourceDoc;
 import org.springframework.restdocs.RestDocumentationContext;
 import org.springframework.restdocs.operation.Operation;
 import org.springframework.test.web.servlet.MvcResult;
@@ -10,6 +11,8 @@ import java.lang.reflect.Method;
 
 public class RestDocumentationContextHelper {
 
+    public static final String INCLUDE_SNIPPETS = "include::{snippets}";
+    private static final String INCLUDE_API_DOC = "include::{apiDoc}";
     private Operation operation;
     private RestDocumentationContext context;
 
@@ -39,8 +42,8 @@ public class RestDocumentationContextHelper {
         return handler.getMethod();
     }
 
-    public ApiDoc getClassAnnotation() {
-        return (ApiDoc) getTestClass().getAnnotation(ApiDoc.class);
+    public ResourceDoc getClassAnnotation() {
+        return (ResourceDoc) getTestClass().getAnnotation(ResourceDoc.class);
     }
 
     public ApiDoc getMethodAnnotation() {
@@ -50,4 +53,13 @@ public class RestDocumentationContextHelper {
             return null;
         }
     }
+
+    public String includeApiDoc(String apiDoc) {
+        return INCLUDE_API_DOC + apiDoc + "[]";
+    }
+
+    public String includeSnippet(String snippetPath) {
+        return INCLUDE_SNIPPETS + snippetPath + "[]";
+    }
+
 }

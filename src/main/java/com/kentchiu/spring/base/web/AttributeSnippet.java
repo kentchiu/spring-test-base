@@ -208,11 +208,6 @@ public class AttributeSnippet implements Snippet {
     @Override
     public void document(Operation operation) throws IOException {
         helper = new RestDocumentationContextHelper(operation);
-//        MvcResult mvcResult = (MvcResult) operation.getAttributes().get("org.springframework.test.web.servlet.MockMvc.MVC_RESULT_ATTRIBUTE");
-//        HandlerMethod hm = (HandlerMethod) mvcResult.getHandler();
-//        Method method = hm.getMethod();
-//        Preconditions.checkState(StringUtils.equals(method.getName(),  helper.getTargetMethod().getName()));
-        //Parameter[] parameters = method.getParameters();
         Parameter[] parameters = helper.getTargetMethod().getParameters();
         write(operation, helper.getTargetMethod().getReturnType());
 

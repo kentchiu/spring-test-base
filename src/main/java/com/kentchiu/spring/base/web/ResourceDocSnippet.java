@@ -42,7 +42,7 @@ public class ResourceDocSnippet implements Snippet {
 
         ApiDoc apiDoc = helper.getMethodAnnotation();
         if (apiDoc != null) {
-            String include = "include::{snippets}/" + context.getTestClass().getSimpleName() + "/" + context.getTestMethodName() + "/ApiDoc.adoc[]";
+            String include = helper.includeSnippet("/" + context.getTestClass().getSimpleName() + "/" + context.getTestMethodName() + "/ApiDoc.adoc");
             Api api = new Api(operation.getRequest().getMethod().name(), include);
             setOrder(context, api);
             section.api.add(api);
@@ -52,7 +52,7 @@ public class ResourceDocSnippet implements Snippet {
                 if (isMatches(url)) {
                     String returnType = helper.getTargetMethod().getReturnType().getSimpleName();
                     Preconditions.checkState(StringUtils.equals(returnType, helper.getTargetMethod().getReturnType().getSimpleName()));
-                    attributeInclude = "include::{snippets}/" + context.getTestClass().getSimpleName() + "/" + context.getTestMethodName() + "/" + returnType + ".adoc[]";
+                    attributeInclude = helper.includeApiDoc("/" + context.getTestClass().getSimpleName() + "/" + context.getTestMethodName() + "/" + returnType + ".adoc");
                 }
             }
         }
@@ -98,19 +98,11 @@ public class ResourceDocSnippet implements Snippet {
         if (annotation != null) {
             result.put("resourceChineseName", annotation.title());
         } else {
-            result.put("resourceChineseName", helper.getClass().getSimpleName());
+            result.put("resourceChineseName", helper.getTargetClass().getSimpleName());
             logger.warn("Missing @ApiDoc in test class");
         }
 
-        result.put("classPostSnippet", "");
-
-        if (helper.getClassAnnotation() != null) {
-            String snippet = helper.getClassAnnotation().postSnippet();
-            if (StringUtils.isNotBlank(snippet)) {
-                result.put("classPostSnippet", "include::{apiDoc}/" + snippet);
-            }
-        }
-
+        result.put("snippet", getSnippet());
 
         if (StringUtils.equals(DEFAULT_MESSAGE, attributeInclude)) {
             logger.warn("Can't found attributeInclude");
@@ -120,6 +112,16 @@ public class ResourceDocSnippet implements Snippet {
         List<Section> sections = sortedSessions.stream().filter(s -> !s.api.isEmpty()).collect(Collectors.toList());
         result.put("section", sections);
         return result;
+    }
+
+    private String getSnippet() {
+        if (helper.getClassAnnotation() != null) {
+            String snippet = helper.getClassAnnotation().include();
+            if (StringUtils.isNotBlank(snippet)) {
+                return helper.includeApiDoc(snippet);
+            }
+        }
+        return "";
     }
 
     class Section {

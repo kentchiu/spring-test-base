@@ -1,6 +1,9 @@
 package com.kentchiu.spring.base.web;
 
+import com.google.common.base.CaseFormat;
 import com.kentchiu.spring.base.domain.ApiDoc;
+import com.kentchiu.spring.base.domain.Include;
+import com.kentchiu.spring.base.domain.Position;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -9,8 +12,10 @@ import org.springframework.restdocs.operation.Operation;
 import org.springframework.restdocs.snippet.TemplatedSnippet;
 
 import java.lang.reflect.Parameter;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+
 
 public class ApiDocSnippet extends TemplatedSnippet {
 
@@ -27,7 +32,32 @@ public class ApiDocSnippet extends TemplatedSnippet {
         Map<String, Object> results = new HashedMap();
         findArgument(operation).ifPresent(arg -> results.put("argument", arg));
 
-        ApiDoc apiDoc = helper.getMethodAnnotation();
+        ApiDoc apiDocs = helper.getMethodAnnotation();
+        String title = getTitle(operation, apiDocs);
+        results.put("title", title);
+        results.put("className", helper.getTestClass().getSimpleName());
+        try {
+            results.put("methodName", helper.getTestMethod().getName());
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        try {
+            Include[] includes = helper.getTestMethod().getAnnotationsByType(Include.class);
+            Arrays.stream(Position.values()).map(p -> CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, p.name())).forEach(name -> results.put(name, ""));
+            for (Include each : includes) {
+                if (StringUtils.isNotBlank(each.value())) {
+                    String include = helper.includeApiDoc(each.value());
+                    logger.debug("each file: {} " + include);
+                    results.put(CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, each.position().name()), include);
+                }
+            }
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        return results;
+    }
+
+    private String getTitle(Operation operation, ApiDoc apiDoc) {
         String title = "";
         if (apiDoc != null) {
             title = apiDoc.title();
@@ -36,31 +66,9 @@ public class ApiDocSnippet extends TemplatedSnippet {
             title = operation.getRequest().getMethod().name();
             logger.warn("");
         }
-        results.put("title", title);
-        results.put("className", helper.getTestClass().getSimpleName());
-        try {
-            results.put("methodName", helper.getTestMethod().getName());
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        }
-        return results;
+        return title;
     }
 
-    //    private Optional<String> findArgument(Operation operation) {
-//        MvcResult mvcResult = (MvcResult) operation.getAttributes().get("org.springframework.test.web.servlet.MockMvc.MVC_RESULT_ATTRIBUTE");
-//        HandlerMethod handler = (HandlerMethod) mvcResult.getHandler();
-//        MethodParameter[] methodParameters = handler.getMethodParameters();
-//        for (MethodParameter p : methodParameters) {
-//            Class<?> type = p.getParameterType();
-//            if (type.isPrimitive() || type.isArray()) {
-//                return Optional.empty();
-//            }
-//            if ( StringUtils.endsWith(type.getPackage().toString(), ".query") || StringUtils.endsWith(type.getPackage().toString(), ".dto")) {
-//                return Optional.of(type.getSimpleName());
-//            }
-//        }
-//        return Optional.empty();
-//    }
     private Optional<String> findArgument(Operation operation) {
         Parameter[] parameters = helper.getTargetMethod().getParameters();
         for (Parameter p : parameters) {

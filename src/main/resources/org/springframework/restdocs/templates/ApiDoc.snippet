@@ -1,15 +1,30 @@
+{{beforeTitle}}
+
 ==== {{title}}
+
+{{afterTitle}}
+
+{{beforeArgument}}
 
 {{#argument}}
 Arguments:
 include::{snippets}/{{className}}/{{methodName}}/{{argument}}.adoc[]
 {{/argument}}
 
+{{afterArgument}}
+
 ===== Request Example
+
+{{beforeRequest}}
 
 include::{snippets}/{{className}}/{{methodName}}/curl-request.adoc[]
 
+{{afterRequest}}
+
 ===== Response Example
+
+{{beforeResponse}}
 
 include::{snippets}/{{className}}/{{methodName}}/http-response.adoc[]
 
+{{afterResponse}}

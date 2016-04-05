@@ -1,0 +1,5 @@
+package com.kentchiu.spring.base.domain;
+
+public enum Position {
+    BEFORE_TITLE, AFTER_TITLE, BEFORE_ARGUMENT, AFTER_ARGUMENT, BEFORE_REQUEST, AFTER_REQUEST, BEFORE_RESPONSE, AFTER_RESPONSE
+}

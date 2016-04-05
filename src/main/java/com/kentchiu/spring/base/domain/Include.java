@@ -1,19 +1,20 @@
 package com.kentchiu.spring.base.domain;
 
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target({METHOD, FIELD})
-public @interface ApiDoc {
+@Target({METHOD})
+@Repeatable(Includes.class)
+public @interface Include {
 
-    int order() default Integer.MAX_VALUE;
+    Position position();
 
-    String title();
+    String value();
 
 }
 
