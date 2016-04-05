@@ -14,4 +14,6 @@ public @interface ResourceDoc {
 
     String include() default "";
 
+    Class type();
+
 }

@@ -1,12 +1,12 @@
 package com.kentchiu.spring.base.web;
 
-import com.google.common.base.Preconditions;
+import com.google.common.base.Joiner;
 import com.kentchiu.spring.base.domain.ApiDoc;
+import com.kentchiu.spring.base.domain.ResourceDoc;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpMethod;
 import org.springframework.restdocs.RestDocumentationContext;
 import org.springframework.restdocs.operation.Operation;
 import org.springframework.restdocs.snippet.Snippet;
@@ -20,10 +20,8 @@ import java.util.stream.Collectors;
 
 public class ResourceDocSnippet implements Snippet {
 
-    public static final String DEFAULT_MESSAGE = "FIXME: NOT FOUND";
     private Operation operation;
     private List<Section> sections = new ArrayList<>();
-    private String attributeInclude = DEFAULT_MESSAGE;
     private RestDocumentationContextHelper helper;
     private Logger logger = LoggerFactory.getLogger(ResourceDocSnippet.class);
 
@@ -46,24 +44,6 @@ public class ResourceDocSnippet implements Snippet {
             Api api = new Api(operation.getRequest().getMethod().name(), include);
             setOrder(context, api);
             section.api.add(api);
-
-            if (HttpMethod.GET == operation.getRequest().getMethod()) {
-                String url = operation.getRequest().getUri().toString();
-                if (isMatches(url)) {
-                    String returnType = helper.getTargetMethod().getReturnType().getSimpleName();
-                    Preconditions.checkState(StringUtils.equals(returnType, helper.getTargetMethod().getReturnType().getSimpleName()));
-                    attributeInclude = helper.includeApiDoc("/" + context.getTestClass().getSimpleName() + "/" + context.getTestMethodName() + "/" + returnType + ".adoc");
-                }
-            }
-        }
-    }
-
-    boolean isMatches(String url) {
-        if (url.endsWith("/")) {
-            return url.matches(".*\\w{8}-\\w{4}-\\w{4}-\\w{4}-\\w{12}[\\?? /b]?.*");
-        } else {
-            String s = StringUtils.substringAfterLast(url, "/");
-            return s.matches(".*\\w{8}-\\w{4}-\\w{4}-\\w{4}-\\w{12}[\\?? /b]?.*");
         }
     }
 
@@ -93,25 +73,44 @@ public class ResourceDocSnippet implements Snippet {
 
         RestDocumentationContext context = (RestDocumentationContext) operation.getAttributes().get(RestDocumentationContext.class.getName());
 
-        ApiDoc annotation = context.getTestClass().getAnnotation(ApiDoc.class);
+        ResourceDoc annotation = context.getTestClass().getAnnotation(ResourceDoc.class);
 
         if (annotation != null) {
             result.put("resourceChineseName", annotation.title());
         } else {
             result.put("resourceChineseName", helper.getTargetClass().getSimpleName());
-            logger.warn("Missing @ApiDoc in test class");
+            logger.warn("Missing @ResourceDoc in test class");
         }
 
         result.put("snippet", getSnippet());
 
-        if (StringUtils.equals(DEFAULT_MESSAGE, attributeInclude)) {
-            logger.warn("Can't found attributeInclude");
-        }
-        result.put("attributeInclude", attributeInclude);
+
         List<Section> sortedSessions = sections.stream().sorted((o1, o2) -> o1.uri.length() > o2.getUri().length() ? 1 : -1).collect(Collectors.toList());
         List<Section> sections = sortedSessions.stream().filter(s -> !s.api.isEmpty()).collect(Collectors.toList());
         result.put("section", sections);
+
+        String resourceType = writeAttribute(operation);
+
+        String attributeInclude = helper.includeSnippet("/" + context.getTestClass().getSimpleName() + "/" + resourceType + ".adoc");
+        result.put("attributeInclude", attributeInclude);
+
         return result;
+    }
+
+    private String writeAttribute(Operation operation) {
+        Class type = helper.getClassAnnotation().type();
+        AttributeSnippet attributeSnippet = new AttributeSnippet();
+        List<String> strings = attributeSnippet.attributeTable(type);
+
+        WriterResolver writerResolver = (WriterResolver) operation.getAttributes().get(
+                WriterResolver.class.getName());
+        try (Writer writer = writerResolver.resolve("{ClassName}", type.getSimpleName(), (RestDocumentationContext) operation.getAttributes().get(RestDocumentationContext.class.getName()))) {
+            String lines = Joiner.on("\n").join(strings);
+            writer.append(lines);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return type.getSimpleName();
     }
 
     private String getSnippet() {
