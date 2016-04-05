@@ -14,4 +14,6 @@ public @interface ApiDoc {
 
     String title();
 
+    String postSnippet() default "";
+
 }

@@ -94,12 +94,24 @@ public class ResourceDocSnippet implements Snippet {
         RestDocumentationContext context = (RestDocumentationContext) operation.getAttributes().get(RestDocumentationContext.class.getName());
 
         ApiDoc annotation = context.getTestClass().getAnnotation(ApiDoc.class);
+
         if (annotation != null) {
             result.put("resourceChineseName", annotation.title());
         } else {
             result.put("resourceChineseName", helper.getClass().getSimpleName());
             logger.warn("Missing @ApiDoc in test class");
         }
+
+        result.put("classPostSnippet", "");
+
+        if (helper.getClassAnnotation() != null) {
+            String snippet = helper.getClassAnnotation().postSnippet();
+            if (StringUtils.isNotBlank(snippet)) {
+                result.put("classPostSnippet", "include::{apiDoc}/" + snippet);
+            }
+        }
+
+
         if (StringUtils.equals(DEFAULT_MESSAGE, attributeInclude)) {
             logger.warn("Can't found attributeInclude");
         }
