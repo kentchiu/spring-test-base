@@ -64,7 +64,6 @@ public class ApiDocSnippet extends TemplatedSnippet {
         }
         if (StringUtils.isBlank(title)) {
             title = operation.getRequest().getMethod().name();
-            logger.warn("");
         }
         return title;
     }
